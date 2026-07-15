@@ -41,9 +41,15 @@ confirma auth ao vivo para os dois escopos e reporta o status real do bloqueio d
 O client `cambio-real-v2/providers/bs2/sandbox-env` emite tokens OAuth2 válidos para os dois
 escopos, mas recebe `403` em **toda** chamada de recurso testada — inclusive `GET` de listagem,
 não financeira. Isso é mais amplo que o gap já documentado em `provider-protocol/docs/PROVIDER-MAP.md`
-(que só registrava `POST create` → `400 CT02098: Client not located in context`). Nenhum teste de
-sandbox real além da autenticação pode avançar até a BS2 provisionar este client contra um
-contexto de conta válido — ação externa, não resolvível por código. Ver
+(que só registrava `POST create` → `400 CT02098: Client not located in context`).
+
+**Descartado "client mal configurado" (2026-07-15):** testados também os dois clients que o
+legado `cerebro` efetivamente usa hoje — `pass cambio-real/bs2/cerebro-demo-env` e
+`pass cambio-real/bs2/demo-env` — mesmo resultado: autenticam, `403` em `GET collection-orders`.
+Três clients diferentes, mesmo ambiente sandbox (`apihmz.bancobonsucesso.com.br`), mesmo bloqueio.
+Isso confirma que o problema é do ambiente/contexto de conta no lado BS2, não de uma credencial
+específica mal provisionada. Nenhum teste de sandbox real além da autenticação pode avançar até a
+BS2 provisionar contra um contexto de conta válido — ação externa, não resolvível por código. Ver
 `docs/providers/bs2/discovery.md` §3 para o registro completo.
 
 ## Correções vs. o adapter C# greenfield (`cambio-real-v3`, não confirmado)

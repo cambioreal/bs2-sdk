@@ -1,12 +1,16 @@
 # BS2 (Banco Bonsucesso) — Discovery
 
 Status: SDK (`bs2-sdk`, público, `CambioReal.Bs2.Client` 0.1.0 no GitHub Packages) e gateway
-(`bs2-gateway`, privado, imagem publicada `ghcr.io/cambioreal/bs2-gateway:sha-b36a8670`)
-implementados, publicados e com testes verdes — ver `bs2-sdk/README.md` e `bs2-gateway/README.md`
-para o status detalhado de cada. GitOps: PR aberto em `HideakiSolutions/platform-gitops#363`
-(scaffold dev, ainda não mergeado). Bloqueio de provisionamento BS2 (§3) segue de pé — confirmado
-com dois clients BS2 distintos, incluindo o que o legado `cerebro` efetivamente usa hoje; nenhuma
-escrita/leitura de recurso real foi exercitada além da autenticação.
+(`bs2-gateway`, privado, imagem `ghcr.io/cambioreal/bs2-gateway:sha-b36a8670`) implementados,
+publicados, **deployados e verificados ao vivo no k3s `.70`** (2026-07-15, autorizado
+explicitamente pelo dono) — ver `bs2-sdk/README.md` e `bs2-gateway/README.md` para o status
+detalhado de cada. GitOps: `HideakiSolutions/platform-gitops#363` mergeado, `Application`/
+`AppProject` bootstrapados, pod `1/1 Running`, health checks `200`, chamada real end-to-end
+(`GET /v1/bs2/payins`) confirma `403 BS2_PROVIDER_FORBIDDEN` corretamente classificado — todo o
+pipeline funciona. Bloqueio de provisionamento BS2 (§3) segue de pé (externo, não resolvível por
+código) — confirmado com dois clients BS2 distintos, incluindo o que o legado `cerebro`
+efetivamente usa hoje, e agora também reconfirmado a partir do serviço real deployado, não só do
+SDK local.
 Provider order position: **1 of 9** (`GOAL-provider-standalone-sandbox-loop.md`).
 Verified: 2026-07-15, against `cambio-real-v2/providers/bs2/sandbox-env` live sandbox + legacy
 `cerebro` (read-only) + greenfield `cambio-real-v3` adapters (read-only, unverified-assumption tier).

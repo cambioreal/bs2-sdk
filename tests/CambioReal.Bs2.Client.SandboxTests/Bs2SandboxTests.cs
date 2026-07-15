@@ -77,6 +77,52 @@ public sealed class Bs2SandboxTests
         }
     }
 
+    /// <summary>
+    /// Espelha <see cref="CollectionOrdersList_ReachesProviderAndReportsCurrentAccessStatus"/> para
+    /// o domínio de conta corrente (<c>pj/apibanking/forintegration/v2/contascorrentes/saldo</c>),
+    /// achado fora do escopo original da auditoria de payin/payout (ver
+    /// docs/providers/bs2/discovery.md §13). Reusa o escopo <c>pix.cambio.collection.order</c> —
+    /// mesmo bloqueio de provisionamento (§3) é esperado até desbloqueio externo pela BS2. Nunca
+    /// falha por causa do status HTTP em si, só por erro de rede/protocolo.
+    /// </summary>
+    [Fact]
+    [Trait("Category", "Sandbox")]
+    public async Task AccountBalance_ReachesProviderAndReportsCurrentAccessStatus()
+    {
+        using var provider = BuildServiceProvider();
+        var client = provider.GetRequiredService<Bs2Client>();
+
+        try
+        {
+            var balance = await client.Accounts.GetBalanceAsync();
+            output.WriteLine($"GET contascorrentes/saldo: 200 OK, final={balance.Final} — bloqueio de provisionamento PARECE RESOLVIDO, expandir cobertura/confirmar shape.");
+        }
+        catch (Bs2ApiException exception)
+        {
+            output.WriteLine($"GET contascorrentes/saldo: HTTP {(int)exception.StatusCode} ({exception.StatusCode}) — {Truncate(exception.ErrorCode)}");
+        }
+    }
+
+    /// <summary>Idem para <c>GET .../contascorrentes/extrato</c> (<see cref="AccountBalance_ReachesProviderAndReportsCurrentAccessStatus"/>).</summary>
+    [Fact]
+    [Trait("Category", "Sandbox")]
+    public async Task AccountStatement_ReachesProviderAndReportsCurrentAccessStatus()
+    {
+        using var provider = BuildServiceProvider();
+        var client = provider.GetRequiredService<Bs2Client>();
+
+        try
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var statement = await client.Accounts.GetStatementAsync(today, today);
+            output.WriteLine($"GET contascorrentes/extrato: 200 OK, {statement.Total} movimentacao(oes) — bloqueio de provisionamento PARECE RESOLVIDO, expandir cobertura.");
+        }
+        catch (Bs2ApiException exception)
+        {
+            output.WriteLine($"GET contascorrentes/extrato: HTTP {(int)exception.StatusCode} ({exception.StatusCode}) — {Truncate(exception.ErrorCode)}");
+        }
+    }
+
     private static async Task<(string Token, string TokenType)> GetLiveTokenAsync(Bs2Scope scope)
     {
         using var provider = BuildServiceProvider();

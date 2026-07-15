@@ -30,6 +30,8 @@ ver "Correções" abaixo).
 | Criação de collection-order (payin) | 🟡 Modelado a partir do payload exato do legado — **não exercitado ao vivo** (bloqueado por autorização financeira pendente E pelo bloqueio de provisionamento) |
 | Criação de payment-order (payout, dict-key/account-data) | 🟡 Idem |
 | Webhooks (payin/payout) | 🟡 Modelado a partir do legado — HMAC-SHA256 (`X-BS2-Signature`) + IP allowlist; implementação do handler HTTP fica no `bs2-gateway`, não neste SDK |
+| `GET contascorrentes/extrato` (saldo/extrato bancário) | 🟡 Modelado a partir do legado (`AccountService::statement`) — shape confirmado por fixture (`config/bs2-mock.php`); **não exercitado ao vivo** (mesmo bloqueio de provisionamento esperado) |
+| `GET contascorrentes/saldo`/`extrato/analitico` | 🟡 Path/params confirmados no legado, **shape de resposta NÃO confirmado** (sem fixture, sem uso real em nenhum outro lugar do `cerebro`) — ver discovery.md §13 |
 
 Suíte de integração sandbox real, opt-in (nunca roda em CI por padrão):
 [`tests/CambioReal.Bs2.Client.SandboxTests`](tests/CambioReal.Bs2.Client.SandboxTests/README.md) —
@@ -110,6 +112,11 @@ var payoutId = await client.PaymentOrders.CreateByPixKeyAsync(new CreatePaymentO
     CreditorDict = new Bs2CreditorDict(pixKey, "PHONE"),
     ForeignDebtor = new Bs2ForeignParty("US", "Jane Doe"),
 });
+
+// Conta corrente — saldo/extrato (domínio banking, mesmo escopo OAuth2 do payin — ver discovery.md §13)
+var balance = await client.Accounts.GetBalanceAsync();
+var page = await client.Accounts.GetStatementAsync(startDate, endDate, offset: 0);
+var fullPeriod = await client.Accounts.GetFullStatementAsync(startDate, endDate); // pagina automaticamente
 ```
 
 ## Webhook — nunca confiar no status do corpo

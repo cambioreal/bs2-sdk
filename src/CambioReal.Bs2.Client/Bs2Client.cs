@@ -33,6 +33,7 @@ public sealed class Bs2Client
 
         CollectionOrders = new CollectionOrdersResource(this);
         PaymentOrders = new PaymentOrdersResource(this);
+        Accounts = new AccountsResource(this);
     }
 
     /// <summary>Payin — ordens de cobrança. <c>core2/pix/cambio/v1/collection-orders</c>.</summary>
@@ -41,7 +42,18 @@ public sealed class Bs2Client
     /// <summary>Payout — ordens de pagamento. <c>core2/pix/cambio/v1/payment-orders</c>.</summary>
     public PaymentOrdersResource PaymentOrders { get; }
 
+    /// <summary>Conta corrente — saldo/extrato. <c>pj/apibanking/forintegration/v2/contascorrentes</c>.</summary>
+    public AccountsResource Accounts { get; }
+
     internal Task<TResponse> GetCollectionOrdersAsync<TResponse>(string path, CancellationToken cancellationToken) =>
+        GetAsync<TResponse>(collectionOrdersHttpClient, path, cancellationToken);
+
+    /// <summary>
+    /// Roteia consultas de conta corrente pelo MESMO pipeline HTTP de <see cref="CollectionOrders"/>
+    /// — confirmado no legado que <c>contascorrentes/*</c> usa o escopo <c>pix.cambio.collection.order</c>,
+    /// não um escopo/HttpClient próprio (ver <see cref="Resources.AccountsResource"/>).
+    /// </summary>
+    internal Task<TResponse> GetAccountsAsync<TResponse>(string path, CancellationToken cancellationToken) =>
         GetAsync<TResponse>(collectionOrdersHttpClient, path, cancellationToken);
 
     internal Task<TResponse> PostCollectionOrdersAsync<TRequest, TResponse>(

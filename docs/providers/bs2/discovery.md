@@ -268,13 +268,19 @@ Mesmo formato paginado do payin (`itens`). Bloqueado por 403 (ver §3).
 | 11 | `core2/pix/cambio/v1/payment-orders` (list) | GET | `PaymentOrdersResource.ListAsync` | `GET /v1/bs2/payouts` | Sync (status, agregado) | read | n/a | contrato + sandbox (opt-in, seguro) | 🔴 `403` confirmado ao vivo — mesmo bloqueio de #5 |
 | 12 | webhook inbound payin | POST (inbound) | n/a (gateway-side, `Bs2WebhookAuthenticator`) | `POST /v1/bs2/webhooks/payin` | Sync (event) | non-financial-write (só dispara re-poll) | payload sintético assinado p/ teste de contrato | contrato HMAC válido/inválido + normalização | ⚪ não testado (precisa endpoint público implantado) |
 | 13 | webhook inbound payout | POST (inbound) | n/a | `POST /v1/bs2/webhooks/payout` | Sync (event) | non-financial-write | idem | idem | ⚪ não testado |
+| 14 | `pj/apibanking/forintegration/v2/contascorrentes/saldo` | GET | `AccountsResource.GetBalanceAsync` | `GET /v1/bs2/accounts/balance` | Sync (status) | read | n/a | contrato (mock) + sandbox opt-in | 🔴 bloqueio de provisionamento esperado (mesmo escopo de #5), não exercitado ao vivo nesta sessão |
+| 15 | `pj/apibanking/forintegration/v2/contascorrentes/extrato` | GET | `AccountsResource.GetStatementAsync`/`GetFullStatementAsync` | `GET /v1/bs2/accounts/statement` | Sync (status, agregado) | read | n/a | contrato (mock) + sandbox opt-in | 🔴 bloqueio de provisionamento esperado, não exercitado ao vivo nesta sessão |
+| 16 | `pj/apibanking/forintegration/v2/contascorrentes/extrato/analitico` | GET | `AccountsResource.GetStatementAnalyticalAsync` | `GET /v1/bs2/accounts/statement/analytical` | Sync (status, agregado) | read | n/a | contrato (mock) + sandbox opt-in | 🔴 bloqueio de provisionamento esperado, não exercitado ao vivo nesta sessão |
 
-**Resumo do gate de leitura não financeira desta iteração:** dos 13 endpoints, **2 foram exercitados
-com sucesso ao vivo** (auth, ambos os scopes) e **2 foram exercitados e retornaram bloqueio
-externo confirmado** (list payin/payout, `403`). Os demais 9 dependem de escrita financeira
-(bloqueada por autorização pendente, per goal §0.5) ou de dados que só existem após uma escrita
-bem-sucedida (bloqueados transitivamente) ou de infraestrutura do gateway ainda não implantada
-(webhooks).
+**Resumo do gate de leitura não financeira desta iteração:** dos 13 endpoints do escopo declarado
+original (payin/payout/webhooks), **2 foram exercitados com sucesso ao vivo** (auth, ambos os
+scopes) e **2 foram exercitados e retornaram bloqueio externo confirmado** (list payin/payout,
+`403`). Os demais 9 dependem de escrita financeira (bloqueada por autorização pendente, per goal
+§0.5) ou de dados que só existem após uma escrita bem-sucedida (bloqueados transitivamente) ou de
+infraestrutura do gateway ainda não implantada (webhooks). Os endpoints #14-16 (conta corrente,
+ver §13) foram **adicionados nesta sessão** como gap P0 fora do escopo declarado original — READ,
+não financeiros, implementados e cobertos por contrato/mock; sandbox real não exercitado (mesmo
+bloqueio de provisionamento esperado do escopo #3-#11).
 
 ## 10. Lacunas, suposições e riscos
 
@@ -323,3 +329,72 @@ BS2 se encaixa integralmente no padrão canônico `Sync` + SDK/gateway standalon
 Kira/Ripple. Não é necessário abrir ADR de exceção. O único ADR relevante ao domínio (ADR-0013,
 resolução de prefixo de payout) pertence ao `cerebro`/`cambio-real-v3`, não a este SDK/gateway,
 e não será portado.
+
+## 13. Conta corrente — saldo/extrato (achado fora do escopo original, agora implementado)
+
+`provider-protocol/docs/gateways/coverage/bs2.md` registrou este achado como um gap não decidido
+explicitamente (nem gap, nem exclusão intencional — "não contava" no cálculo de cobertura por estar
+fora do domínio PIX payin/payout). Esta seção fecha essa lacuna: os 3 endpoints foram implementados
+como gap P0 (READ-only, consulta para conciliação).
+
+Fonte de verdade: `cerebro/app/Libraries/Bs2/AccountService.php` (legado), usado hoje por
+`Bs2ReconciliationCommand` (concilia payin/payout contra o extrato bancário, envia relatório por
+e-mail) e por `Bs2BankFeeAccountingCommand`/`Bs2MarlimAccountingCommand` (contabilização).
+
+- **Domínio distinto**: `pj/apibanking/forintegration/v2/contascorrentes/*` (banking/tesouraria),
+  não `core2/pix/cambio/v1/*` (PIX câmbio). Mesmo host/ambiente, path diferente.
+- **Escopo OAuth2 reusado, não um escopo próprio**: confirmado em
+  `AccountService::__construct()` — `$this->scope = 'pix.cambio.collection.order'`, o MESMO
+  escopo do payin. O SDK roteia estas consultas pelo mesmo `HttpClient`/pipeline de
+  `CollectionOrdersResource` (`Bs2Client.GetAccountsAsync` → `collectionOrdersHttpClient`), sem
+  exigir um terceiro cliente HTTP.
+
+### Saldo — `GET pj/apibanking/forintegration/v2/contascorrentes/saldo`
+
+Sem parâmetros de query — confirmado (`AccountService::balance()`). **Shape de resposta NÃO
+confirmado**: `config/bs2-mock.php` não tem entrada `balance` (`mock_path` aponta para
+`bs2-mock.balance.success`, ausente do arquivo de mocks) e o método nunca é chamado por nenhum
+outro lugar do `cerebro` (confirmado por grep em toda a árvore `app/`). O SDK modela
+`Bs2AccountBalance` inferindo o shape do bloco `saldo` aninhado devolvido por `GET .../extrato`
+(mesmo domínio, mesmo nome de campo) — tratar como suposição a confirmar quando o endpoint puder
+ser exercitado ao vivo.
+
+### Extrato — `GET pj/apibanking/forintegration/v2/contascorrentes/extrato`
+
+Query confirmada (`AccountService::statement()`): `movimentoInicial`/`movimentoFinal`
+(`Y-m-d`), `inicio` (offset de paginação). **Shape de resposta CONFIRMADO** campo a campo em
+`config/bs2-mock.php` (chave `statement.success`) e no uso real de
+`Bs2ReconciliationCommand::fetchBs2Statement`: paginação por `inicio += 100` até `inicio >= total`
+(o SDK expõe isso como `AccountsResource.GetFullStatementAsync`, parametrizável, sem replicar o
+retry-com-sleep em resposta vazia do legado — decisão de orquestração de job, fora do SDK, mesmo
+padrão já usado para não replicar a resolução de external-id por prefixo do webhook em §6).
+Categorias de movimentação usadas pelo legado para conciliar (`Bs2ReconciliationCommand`
+constantes): `2`=TED recebido, `10`=PIX recebido, `11`=PIX enviado, `16`=PIX recebido interno,
+`17`=PIX enviado interno, `20`=tarifa — não modelado como enum (catálogo não confirmado como
+exaustivo).
+
+### Extrato analítico — `GET pj/apibanking/forintegration/v2/contascorrentes/extrato/analitico`
+
+Query confirmada (`AccountService::statementV2()`): `dataInicial`/`dataFinal`, formato
+`Y-m-d H:i` (**com hora**, diferente do extrato simples, que é só data) — sem parâmetro de
+paginação (`inicio` não existe aqui). **Shape de resposta NÃO confirmado**: mesma situação do
+saldo — sem fixture em `config/bs2-mock.php` (`mock_path` = `bs2-mock.statementV2.success`,
+ausente) e sem nenhuma chamada ao método em outro lugar do `cerebro`. O SDK devolve o corpo cru
+como `JsonElement` (`AccountsResource.GetStatementAnalyticalAsync`) em vez de inventar um schema
+sem evidência — mesmo padrão de campo "cru" já usado no `ouribank-sdk` para formas de provider
+desconhecidas.
+
+### Testes
+
+- Contrato/mock: `tests/CambioReal.Bs2.Client.Tests/AccountsResourceTests.cs` — cobre path/query
+  exatos dos 3 endpoints, parsing de `Bs2AccountStatement`/`Bs2AccountMovement`
+  (remetente/favorecido), paginação de `GetFullStatementAsync` e o retry de 401 no pipeline
+  reusado. Passam sem depender de rede.
+- Sandbox opt-in: `tests/CambioReal.Bs2.Client.SandboxTests/Bs2SandboxTests.cs` —
+  `AccountBalance_ReachesProviderAndReportsCurrentAccessStatus`/
+  `AccountStatement_ReachesProviderAndReportsCurrentAccessStatus`, mesmo padrão de sensor de
+  regressão dos testes de payin/payout (nunca falha por causa do status HTTP em si, só por erro de
+  rede/protocolo). **Não exercitados ao vivo nesta sessão** — o mesmo bloqueio de provisionamento
+  do §3 é esperado (client sandbox não vinculado ao contexto de conta correto), e a BS2 confirmou
+  externamente que os merchants de sandbox estão bloqueados (403) além do bloqueio já documentado.
+  Confirmação real fica pendente de desbloqueio externo + execução autorizada pelo dono.

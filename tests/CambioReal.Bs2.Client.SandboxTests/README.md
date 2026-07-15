@@ -34,3 +34,14 @@ qualquer acesso a recurso (mesmo leitura) segue bloqueado por `403` — bloqueio
 BS2 (externo), não um bug de código. `CollectionOrdersList_ReachesProviderAndReportsCurrentAccessStatus`
 nunca falha por causa do `403` em si (só por erro de rede/protocolo) — é um sensor de regressão: se
 o provisionamento for corrigido, o teste passa a imprimir `200 OK` e sinaliza "expandir cobertura".
+
+## Contas correntes (saldo/extrato) — adicionado, ainda não exercitado ao vivo
+
+`AccountBalance_ReachesProviderAndReportsCurrentAccessStatus`/
+`AccountStatement_ReachesProviderAndReportsCurrentAccessStatus` cobrem o achado de
+`pj/apibanking/forintegration/v2/contascorrentes/{saldo,extrato}` (ver discovery.md §13) — mesmo
+padrão de sensor de regressão dos testes de payin/payout acima, mesmo bloqueio de provisionamento
+esperado (reusa o escopo `pix.cambio.collection.order`). **Não rodados ao vivo nesta sessão** — a
+implementação foi validada só contra mock/contrato (`AccountsResourceTests`); a confirmação real
+contra o sandbox depende do desbloqueio de provisionamento (§3) e de uma execução autorizada
+explicitamente pelo dono, seguindo o mesmo processo dos demais testes deste projeto.

@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CambioReal.Bs2.Client/CambioReal.Bs2.Client.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CambioReal.Bs2.Client.Tests/CambioReal.Bs2.Client.Tests.csproj" />
+  </Folder>
+</Solution>

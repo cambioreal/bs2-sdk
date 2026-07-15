@@ -5,8 +5,8 @@ Status: SDK (`bs2-sdk`, público, `CambioReal.Bs2.Client` 0.1.0 no GitHub Packag
 implementados, publicados e com testes verdes — ver `bs2-sdk/README.md` e `bs2-gateway/README.md`
 para o status detalhado de cada. GitOps: PR aberto em `HideakiSolutions/platform-gitops#363`
 (scaffold dev, ainda não mergeado). Bloqueio de provisionamento BS2 (§3) segue de pé — confirmado
-com três clients distintos, incluindo os dois usados pelo legado `cerebro`; nenhuma escrita/leitura
-de recurso real foi exercitada além da autenticação.
+com dois clients BS2 distintos, incluindo o que o legado `cerebro` efetivamente usa hoje; nenhuma
+escrita/leitura de recurso real foi exercitada além da autenticação.
 Provider order position: **1 of 9** (`GOAL-provider-standalone-sandbox-loop.md`).
 Verified: 2026-07-15, against `cambio-real-v2/providers/bs2/sandbox-env` live sandbox + legacy
 `cerebro` (read-only) + greenfield `cambio-real-v3` adapters (read-only, unverified-assumption tier).
@@ -67,9 +67,11 @@ Isso não é um bug do SDK a construir — é um bloqueio externo de provisionam
 qualquer teste E2E real, inclusive os não financeiros de leitura.
 
 **Confirmação adicional (2026-07-15):** repetido o mesmo probe (`GET collection-orders`) com os
-dois clients que o **legado `cerebro` efetivamente usa hoje** — `pass cambio-real/bs2/cerebro-demo-env`
-e `pass cambio-real/bs2/demo-env` — para descartar "credencial errada/mal configurada" como causa.
-Mesmo resultado nos três: autenticam (`200`), `403` em qualquer recurso. Isso isola o bloqueio no
+clients que o **legado `cerebro` efetivamente usa hoje** — `pass cambio-real/bs2/cerebro-demo-env`
+(mesmo `client_id`/`client_secret` do `sandbox-env` usado acima — credencial duplicada em dois
+caminhos do `pass`, não um terceiro client) e `pass cambio-real/bs2/demo-env` (client distinto) —
+para descartar "credencial errada/mal configurada" como causa. Mesmo resultado nos dois clients
+realmente distintos: autenticam (`200`), `403` em qualquer recurso. Isso isola o bloqueio no
 ambiente/contexto de conta sandbox da BS2 como um todo, não em uma credencial específica.
 
 ## 4. Payin — collection-order (`pix.cambio.collection.order`)

@@ -36,10 +36,18 @@ public static class Bs2ServiceCollectionExtensions
         services.AddOptions<Bs2Options>().Validate(
             options =>
             {
-                options.Validate();
-                return true;
+                try
+                {
+                    options.Validate();
+                    return true;
+                }
+                catch (InvalidOperationException)
+                {
+                    return false;
+                }
             },
-            "A configuração do Bs2Options é inválida.");
+            "A configuração do Bs2Options é inválida.")
+            .ValidateOnStart();
 
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<IBs2TokenProvider, Bs2TokenProvider>();

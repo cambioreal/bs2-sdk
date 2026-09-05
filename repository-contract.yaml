@@ -1,0 +1,7 @@
+schema_version: repository-contract/v1
+repository_id: c78d9c91-f2a3-42b5-bd77-2518043d0d93
+identity:
+  remotes:
+  - github.com/cambioreal/bs2-sdk
+capabilities:
+  manifest: null

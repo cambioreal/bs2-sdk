@@ -4,7 +4,7 @@ Status: SDK (`bs2-sdk`, público, `CambioReal.Bs2.Client` 0.1.0 no GitHub Packag
 (`bs2-gateway`, privado, imagem `ghcr.io/cambioreal/bs2-gateway:sha-b36a8670`) implementados,
 publicados, **deployados e verificados ao vivo no k3s `.70`** (2026-07-15, autorizado
 explicitamente pelo dono) — ver `bs2-sdk/README.md` e `bs2-gateway/README.md` para o status
-detalhado de cada. GitOps: `HideakiSolutions/platform-gitops#363` mergeado, `Application`/
+detalhado de cada. GitOps: `Hideaki-Solutions-Infrastructure/platform-gitops#363` mergeado, `Application`/
 `AppProject` bootstrapados, pod `1/1 Running`, health checks `200`, chamada real end-to-end
 (`GET /v1/bs2/payins`) confirma `403 BS2_PROVIDER_FORBIDDEN` corretamente classificado — todo o
 pipeline funciona. Bloqueio de provisionamento BS2 (§3) segue de pé (externo, não resolvível por

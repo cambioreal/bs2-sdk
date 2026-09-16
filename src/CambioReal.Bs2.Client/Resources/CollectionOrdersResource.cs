@@ -80,7 +80,10 @@ public sealed class CollectionOrdersResource
             var details = await GetAsync(orderId, cancellationToken);
             var status = details.Transaction?.Status;
 
-            if (string.Equals(status, "Failed", StringComparison.OrdinalIgnoreCase))
+            // Antes checava apenas "Failed" literal — `Canceled`/`RequestedCancel` gastavam as 10
+            // tentativas inteiras a toa, embora o proprio XML doc do modelo ja os declarasse
+            // terminais. Taxonomia unica agora em Bs2CollectionOrderStatus.
+            if (Bs2CollectionOrderStatus.IsTerminal(status))
             {
                 return details;
             }

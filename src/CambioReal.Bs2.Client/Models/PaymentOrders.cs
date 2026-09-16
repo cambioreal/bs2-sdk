@@ -50,7 +50,7 @@ public sealed record PaymentOrderDetails
     public string? Id { get; init; }
     public string? ExternalId { get; init; }
     public DateTimeOffset? CreatedDate { get; init; }
-    public Bs2CdeParty? Creditor { get; init; }
+    public Bs2CdePartyResponse? Creditor { get; init; }
     public Bs2CreditorDict? CreditorDict { get; init; }
     public Bs2PaymentOrderTransaction? Transaction { get; init; }
     public Bs2Classification? Classification { get; init; }

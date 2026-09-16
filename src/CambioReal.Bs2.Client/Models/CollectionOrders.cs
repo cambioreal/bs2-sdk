@@ -40,7 +40,7 @@ public sealed record CollectionOrderDetails
     public string? ExternalId { get; init; }
     public DateTimeOffset? CreatedDate { get; init; }
     public Bs2CollectionOrderTransaction? Transaction { get; init; }
-    public Bs2CdeParty? Debtor { get; init; }
+    public Bs2CdePartyResponse? Debtor { get; init; }
     public Bs2ForeignParty? ForeignCreditor { get; init; }
     public Bs2Classification? Classification { get; init; }
 }

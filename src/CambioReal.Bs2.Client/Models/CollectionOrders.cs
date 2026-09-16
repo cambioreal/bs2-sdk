@@ -46,10 +46,10 @@ public sealed record CollectionOrderDetails
 }
 
 /// <summary>
-/// Status confirmados no legado (<c>PixService::getStatusPago</c>/<c>PayinNotification::check</c>):
-/// <c>Issued</c>, <c>QrCodeGenerated</c> = pendente; <c>Succeed</c> = pago; <c>Failed</c>,
-/// <c>RequestedCancel</c>, <c>Canceled</c> = erro/cancelado. Modelado como <see cref="string"/>
-/// simples — ver <see cref="Serialization.Bs2Json"/> para o porquê de não usar enum.
+/// Status: ver <see cref="Bs2CollectionOrderStatus"/> — taxonomia canônica, única fonte para
+/// SDK, gateway e adapters. Modelado como <see cref="string"/> simples, não enum; ver
+/// <see cref="Serialization.Bs2Json"/> para o porquê (status desconhecido não pode quebrar a
+/// desserialização).
 /// </summary>
 public sealed record Bs2CollectionOrderTransaction
 {
